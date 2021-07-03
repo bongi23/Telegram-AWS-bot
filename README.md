@@ -4,7 +4,7 @@ and pushes the latest news on AWS to [this Telegram channel](https://t.me/whatsn
 
 The bot is serverless and hosted on AWS.
 
-Service used:
+Services used:
 - AWS Lambda -> to run the bot
 - SecretsManager -> to store bot api key
 - DynamoDB -> to store already published news
