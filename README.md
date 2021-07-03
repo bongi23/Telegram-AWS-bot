@@ -8,3 +8,4 @@ Services used:
 - AWS Lambda -> to run the bot
 - SecretsManager -> to store bot api key
 - DynamoDB -> to store already published news
+- CloudWatch Events -> to trigger the lambda every hour
