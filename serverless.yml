@@ -1,0 +1,80 @@
+service: telegram-aws-news
+
+frameworkVersion: '2'
+plugins:
+  - serverless-python-requirements
+provider:
+  name: aws
+  runtime: python3.8
+  lambdaHashingVersion: 20201221
+  stage: dev
+  region: eu-south-1
+  profile: serverless-personal
+  timeout: 300
+  memorySize: 128
+  # you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+      Resource:
+        - "arn:aws:dynamodb:eu-south-1:409623068028:table/${self:custom.tableName}"
+    - Effect: "Allow"
+      Action:
+        - "secretsmanager:GetSecretValue"
+      Resource:
+        - "arn:aws:secretsmanager:eu-south-1:409623068028:secret:tbot-api-key-CkgebA"
+
+custom:
+  botApiKey: 'tbot-api-key'
+  channelId: '-1001233881989' # prod
+  #channelId: '-1001441034688' # test
+  tableName: "awsNewsPublished"
+  pythonRequirements:
+    pythonBin: python3
+
+# you can add packaging information here
+package:
+#  include:
+#    - include-me.py
+#    - include-me-dir/**
+  exclude:
+    - .gitignore
+    - node_modules/**
+    - venv/**
+
+functions:
+  aws-news-bot:
+    handler: handler.handler
+    events:
+      - schedule:
+          rate: rate(1 hour)
+          input:
+            feedUrl: 'https://aws.amazon.com/en/about-aws/whats-new/recent/feed/'
+            lastModified: 'Mon, 05 Apr 2021 10:08:00 GMT'
+
+#    Define function environment variables here
+    environment:
+      TELEGRAM_API_KEY_SECRET: '${self:custom.botApiKey}'
+      channelId: '${self:custom.channelId}'
+      tableName: '${self:custom.tableName}'
+
+resources:
+  Resources:
+    usersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.tableName}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
